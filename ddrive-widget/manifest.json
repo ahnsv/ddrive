@@ -1,0 +1,11 @@
+{
+  "name": "ddrive",
+  "id": "widget-id-8osoR3ZavU",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "permissions": [],
+  "containsWidget": true,
+  "main": "dist/code.js",
+  "ui": "dist/index.html",
+  "widgetApi": "1.0.0"
+}
