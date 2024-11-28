@@ -11,10 +11,23 @@ function App() {
   const [eventName, setEventName] = React.useState("");
   const [properties, setProperties] = React.useState<EventProperty[]>([]);
   const [currentStatus, setCurrentStatus] = React.useState("");
+  const [isEditing, setIsEditing] = React.useState(false);
 
   useEffect(() => {
     if (typeof parent !== undefined) {
       parent?.postMessage?.({ pluginMessage: "hello" }, "*");
+
+      // Listen for edit messages
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (msg.type === "edit-tracking-plan") {
+          const { data } = msg;
+          setEventName(data.eventName);
+          setProperties(data.properties);
+          setCurrentStatus(data.status);
+          setIsEditing(true);
+        }
+      };
     }
   }, []);
 
@@ -58,7 +71,7 @@ function App() {
 
   return (
     <div className="App">
-      <h2>Create Tracking Plan</h2>
+      <h2>{isEditing ? 'Edit' : 'Create'} Tracking Plan</h2>
       
       <div className="section">
         <h3>Event Name</h3>
@@ -116,14 +129,15 @@ function App() {
           onChange={(e) => setCurrentStatus(e.target.value)}
         >
           <option value="">Select status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="draft">Draft</option>
+          <option value="todo">Todo</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
       <button className="submit-btn" onClick={handleSubmit}>
-        Create Tracking Plan
+        {isEditing ? 'Save Changes' : 'Create Tracking Plan'}
       </button>
     </div>
   );
