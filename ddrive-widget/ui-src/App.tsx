@@ -1,10 +1,16 @@
 import React, { useEffect } from "react";
 import "./App.css";
 
+interface EventProperty {
+  name: string;
+  type: string;
+  description: string;
+}
+
 function App() {
-  const [eventType, setEventType] = React.useState("");
   const [eventName, setEventName] = React.useState("");
-  const [eventDescription, setEventDescription] = React.useState("");
+  const [properties, setProperties] = React.useState<EventProperty[]>([]);
+  const [currentStatus, setCurrentStatus] = React.useState("");
 
   useEffect(() => {
     if (typeof parent !== undefined) {
@@ -12,52 +18,112 @@ function App() {
     }
   }, []);
 
+  const addProperty = () => {
+    setProperties([...properties, { name: "", type: "", description: "" }]);
+  };
+
+  const removeProperty = (index: number) => {
+    setProperties(properties.filter((_, i) => i !== index));
+  };
+
+  const updateProperty = (index: number, field: keyof EventProperty, value: string) => {
+    const newProperties = [...properties];
+    newProperties[index] = { ...newProperties[index], [field]: value };
+    setProperties(newProperties);
+  };
+
   const handleSubmit = () => {
+    // Validate required fields
+    if (!eventName || !currentStatus) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Send data to the plugin
     parent?.postMessage?.(
       { 
         pluginMessage: {
-          type: "create-sticker",
-          eventType,
+          type: "create-tracking-plan",
           eventName,
-          eventDescription
+          properties,
+          currentStatus
         }
       },
       "*"
     );
+
+    // Close the widget UI
+    parent?.postMessage?.({ pluginMessage: { type: "close" } }, "*");
   };
 
   return (
     <div className="App">
-      <h2>Add Tracking Label</h2>
-      <select 
-        value={eventType} 
-        onChange={(e) => setEventType(e.target.value)}
-      >
-        <option value="">Select event type</option>
-        <option value="Click">Click</option>
-        <option value="View">View</option>
-        <option value="Completed">Completed</option>
-      </select>
+      <h2>Create Tracking Plan</h2>
       
-      <input
-        placeholder="Event Name"
-        value={eventName}
-        onChange={(e) => setEventName(e.target.value)}
-      />
-      
-      <textarea
-        placeholder="Event Description"
-        value={eventDescription}
-        onChange={(e) => setEventDescription(e.target.value)}
-      />
+      <div className="section">
+        <h3>Event Name</h3>
+        <input
+          placeholder="Enter event name"
+          value={eventName}
+          onChange={(e) => setEventName(e.target.value)}
+        />
+      </div>
 
-      <button onClick={handleSubmit}>Add Label</button>
-      <button
-        onClick={() => {
-          parent?.postMessage?.({ pluginMessage: "close" }, "*");
-        }}
-      >
-        Close
+      <div className="section">
+        <h3>Event Properties</h3>
+        {properties.map((property, index) => (
+          <div key={index} className="property-card">
+            <div className="property-row">
+              <div>
+                <label>Name</label>
+                <input
+                  placeholder="Property name"
+                  value={property.name}
+                  onChange={(e) => updateProperty(index, "name", e.target.value)}
+                />
+              </div>
+              <div>
+                <label>Type</label>
+                <input
+                  placeholder="Property type"
+                  value={property.type}
+                  onChange={(e) => updateProperty(index, "type", e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label>Description</label>
+              <textarea
+                placeholder="Describe the property"
+                value={property.description}
+                onChange={(e) => updateProperty(index, "description", e.target.value)}
+              />
+            </div>
+            <button className="remove-btn" onClick={() => removeProperty(index)}>
+              <span className="icon">🗑</span> Remove Property
+            </button>
+          </div>
+        ))}
+        <button className="add-btn" onClick={addProperty}>
+          <span className="icon">+</span> Add Property
+        </button>
+      </div>
+
+      <div className="section">
+        <h3>Current Status</h3>
+        <select 
+          value={currentStatus} 
+          onChange={(e) => setCurrentStatus(e.target.value)}
+        >
+          <option value="">Select status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="draft">Draft</option>
+        </select>
+      </div>
+
+      <button className="submit-btn" onClick={handleSubmit}>
+        Create Tracking Plan
       </button>
     </div>
   );
